@@ -1,0 +1,22 @@
+GMOND eadm 8649
+slot_0:load_one
+slot_1:mem_total - ( mem_shared + mem_free + mem_cached + mem_buffers )
+slot_2:likwid_mem_mbpers
+slot_3:likwid_spmflops + ( 2 * likwid_dpmflops )
+slot_4:likwid_dpmflops
+slot_5:likwid_spmflops
+slot_6:likwid_avgcpi
+slot_7:likwid_avgcpuspeed
+slot_8:likwid_totalpower
+slot_9:bytes_in
+slot_10:bytes_out
+slot_11:lustre_read_bytes
+slot_12:lustre_write_bytes
+slot_13:lustre_read_requests
+slot_14:lustre_write_requests
+slot_15:lustre_inode_permission
+slot_16:ibPortRcvData_rate
+slot_19:ibPortXmitPkts_rate
+slot_20:ibCongestion
+slot_21:lustre_read_bytes + lustre_write_bytes
+slot_22:ibPortRcvData_rate + ibPortXmitPkts_rate
