@@ -8,6 +8,8 @@ use Sys::Hostname;
 use Data::Dumper;
 
 ##### CONFIGURATION  #############################
+my $SAMPLETIME = 10;
+
 my $LIKWID_COMMAND = 'likwid-perfctr';
 my $LIKWID_OPTIONS = '-f -O -S 3s';
 
@@ -23,19 +25,15 @@ my $IBLID = '/sys/class/infiniband/mlx4_0/ports/1/lid';
 my $NETSTATFILE = '/proc/net/dev';
 
 # File for memory information
-$MEMSTATFILE = '/proc/meminfo';
+my $MEMSTATFILE = '/proc/meminfo';
 
 # File for load information
-$LOADSTATFILE = '/proc/loadavg';
-
-# File for cpu information
-$CPUSTATFILE = '/proc/stat';
+my $LOADSTATFILE = '/proc/loadavg';
 
 # Curl to write directly into InfluxDB
-$CURL = '/usr/bin/curl';
-$CURLHOST = 'testhost.testdomain.de:8090';
-$CURLDB = 'testcluster';
-
+my $CURL = '/usr/bin/curl';
+my $CURLHOST = 'testhost.testdomain.de:8090';
+my $CURLDB = 'testcluster';
 
 # measurements used: node, socket, memory, cpu
 
@@ -92,10 +90,12 @@ my $CLUSTER = 'default';
 
 if ( $HOST =~ /^broad/  ){
     $CLUSTER = 'TestCluster';
+} elsif ( $HOST =~ /^e/ ){
+    $CLUSTER = 'Emmy';
 }
 
 my %TOPOLOGY = do "./$CLUSTER.pl";
-##### END SET ENIRONMENT #########################$entries[$i]
+##### END SET ENIRONMENT #########################
 
 sub sanitize {
     my $value = shift;
@@ -112,7 +112,7 @@ sub printResults {
 
     foreach my $key ( keys %$results ){
 
-        if ( $key eq 'node' ){
+        if ( $key eq 'node' or $key eq 'network'  ){
             print "$key,cluster=$CLUSTER,host=$HOST ";
             my $fields = '';
 
@@ -136,12 +136,158 @@ sub printResults {
     }
 }
 
+sub getNetstats {
+    my $res = shift;
+
+    if ( -r $NETSTATFILE) {
+        if (open(FILE, "<$NETSTATFILE")) {
+
+            while ( my $ll = <FILE>) {
+                my @ls = split(' ', $ll);
+                if ($ls[0] =~ /(.*):/) {
+                    $res->{$1."_traffic_read"} = $ls[1];
+                    $res->{$1."_traffic_write"} = $ls[9];
+                }
+            }
+
+            close(FILE);
+        }
+    }
+}
+
+sub getIbstats {
+    my $res = shift;
+
+    if (-r "$IBLID") {
+        if (open(FILE, "/usr/sbin/perfquery -r `cat $IBLID` 1 0xf000 |")) {
+            my $traffic_total = 0;
+
+            while ( my $ll = <FILE>) {
+                my @ls = ( $ll =~ m/(.+:)\.+([0-9]*)/ );
+                # from the perfquery manpage:
+                # Note: In PortCounters, PortCountersExtended, PortXmitDataSL, and PortRcvDataSL, components that represent Data (e.g. PortXmitData
+                # and PortRcvData)  indicate octets divided by 4 rather than just octets.
+                if ( defined($ls[0]) && $ls[0] =~ m/PortRcvData:|RcvData:/) {
+                    $res->{ib_traffic_read} = $ls[1] * 4;
+                    $traffic_total += $ls[1] * 4;
+                } elsif ( defined($ls[0]) && $ls[0] =~ m/PortXmitData:|XmtData:/) {
+                    $res->{ib_traffic_write} = $ls[1] * 4;
+                    $traffic_total += $ls[1] * 4;
+                }
+            }
+
+            $res->{ib_traffic_total} = $traffic_total ;
+            close(FILE);
+        }
+    }
+}
+
+sub getLikwid {
+    my $res = shift;
+    my $LIKWIDEX = undef;
+    # my $matchpattern =  join('|', map "^$_", keys %METRICS);
+
+    foreach my $group ( @LIKWID_GROUPS ){
+
+        my $matchpattern;
+        my %metrics;
+
+        foreach my $key ( keys %METRICS ){
+            if ( $group eq $METRICS{$key}->{group} ){
+                my $pattern = $METRICS{$key}->{match};
+                $matchpattern .= "^$pattern|";
+                $pattern =~ s/\\//g;
+                $metrics{$pattern} = $METRICS{$key};
+            }
+        }
+        $matchpattern = substr $matchpattern, 0, -1;
+        # print "$matchpattern\n";
+
+
+        if ( open($LIKWIDEX, "$LIKWID_COMMAND -g $group $LIKWID_OPTIONS |") ){
+            while ( my $line = <$LIKWIDEX> ){
+                if ( $line =~ /($matchpattern)/ ){
+                    # print "$line \n";
+                    my $metric = $metrics{$1};
+                    my $measurement = $metric->{'measurement'};
+                    my $fieldname = $metric->{'field'};
+                    my @entries = split ',', $line;
+
+                    if ( $line =~ /STAT/ ){
+                        $res->{'node'}->{$fieldname} = $entries[$metric->{'stat'}];
+                    } else {
+                        my @values;
+                        shift(@entries);
+
+                        # print "$measurement -> $fieldname\n";
+
+                        if ( $measurement eq 'cpu' ){
+                            foreach my $i ( 0 .. $#entries-1 ){
+                                $values[$i] = sanitize($entries[$i]);
+                            }
+                        } else {
+                            foreach my $i ( 0 .. $#entries-1 ){
+                                if ( $entries[$i] ne '0' ){
+                                    # print "$measurement -> $entries[$i]\n";
+                                    push @values, $entries[$i];
+                                }
+                            }
+                        }
+
+                        for my $i ( 0 .. $#values ){
+                            $res->{$measurement}->[$i]->{$fieldname} = $values[$i];
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+sub getMemstat {
+    my $res = shift;
+
+    if ( -r $MEMSTATFILE) {
+        if (open(FILE, '<'.$MEMSTATFILE)) {
+            my %memstats;
+
+            while ( my $ll = <FILE>) {
+                my @ls = split(' ', $ll);
+                $memstats{$ls[0]} = $ls[1];
+            }
+
+            close(FILE);
+            $res->{mem_used} = $memstats{'MemTotal:'} - ($memstats{'MemFree:'} + $memstats{'Buffers:'}  + $memstats{'Cached:'});
+        }
+    }
+}
+
+sub getLoadstat {
+    my $res = shift;
+
+    if ( -r $LOADSTATFILE) {
+        if (open(FILE, "<$LOADSTATFILE")) {
+            my $ll = <FILE>;
+            my @ls = split(' ', $ll);
+            $res->{cpu_load} = $ls[0];
+            close(FILE);
+        }
+    }
+}
+
 ##### MAIN #######################################
 my %results = (
-    'node' => {} ,
-    'socket' =>  [],
-    # 'memory' =>  [],
-    'cpu' => []
+    'node'    => {},
+    'socket'  => [],
+    'cpu'     => [],
+    'network' => {}
+);
+
+my %timestamp = (
+    'node'    => 0,
+    'socket'  => 0,
+    'cpu'     => 0,
+    'network' => 0
 );
 
 # predeclare datastructures
@@ -150,154 +296,51 @@ foreach my $entity ( keys %TOPOLOGY ){
         $results{$entity}->[$id] = {};
     }
 }
-my $LIKWIDEX = undef;
-# my $matchpattern =  join('|', map "^$_", keys %METRICS);
 
-foreach my $group ( @LIKWID_GROUPS ){
+my $lastsample = 0;
+my @resultHashes = ({}, {});
+my $index = 1;
+my $previousResults;
+my $currentResults;
+my $firstloop = 1;
 
-    my $matchpattern;
-    my %metrics;
+while (1) {
+    $index = $index ? 0 : 1;
+    print "$index\n";
 
-    foreach my $key ( keys %METRICS ){
-        if ( $group eq $METRICS{$key}->{group} ){
-            my $pattern = $METRICS{$key}->{match};
-            $matchpattern .= "^$pattern|";
-            $pattern =~ s/\\//g;
-            $metrics{$pattern} = $METRICS{$key};
-        }
+    $previousResults = $resultHashes[$index];
+    $currentResults = $resultHashes[$index ? 0 : 1] ;
+
+    if (!$firstloop) {
+        my $sincelastsamp = time() - $lastsample;
+        my $slptime = ($sincelastsamp >= $SAMPLETIME) ? 1 : ($SAMPLETIME - $sincelastsamp);
+        print("Need to sleep for $slptime more seconds...\n");
+        sleep($slptime);
     }
-    $matchpattern = substr $matchpattern, 0, -1;
-    print "$matchpattern\n";
 
+    $lastsample = time();
+    getNetstats($currentResults);
+    getIbstats($currentResults);
 
-    if ( open($LIKWIDEX, "$LIKWID_COMMAND -g $group $LIKWID_OPTIONS |") ){
-        while ( my $line = <$LIKWIDEX> ){
-            if ( $line =~ /($matchpattern)/ ){
-                # print "$line \n";
-                my $metric = $metrics{$1};
-                my $measurement = $metric->{'measurement'};
-                my $fieldname = $metric->{'field'};
-                my @entries = split ',', $line;
+    if ($firstloop) {
+        $firstloop = 0;
+    } else {
+        getLikwid(\%results);
 
-                if ( $line =~ /STAT/ ){
-                    $results{'node'}->{$fieldname} = $entries[$metric->{'stat'}];
-                } else {
-                    my @values;
-                    shift(@entries);
+        foreach my $key (keys(%$currentResults)) {
+            if (defined($previousResults->{$key})) {
+                my $diff = $currentResults->{$key} - $previousResults->{$key};
 
-                    print "$measurement -> $fieldname\n";
-
-                    if ( $measurement eq 'cpu' ){
-                        foreach my $i ( 0 .. $#entries-1 ){
-                            $values[$i] = sanitize($entries[$i]);
-                        }
-                    } else {
-                        foreach my $i ( 0 .. $#entries-1 ){
-                            if ( $entries[$i] ne '0' ){
-                                print "$measurement -> $entries[$i]\n";
-                                push @values, $entries[$i];
-                            }
-                        }
-                    }
-
-                    for my $i ( 0 .. $#values ){
-                        $results{$measurement}->[$i]->{$fieldname} = $values[$i];
-                    }
+                if ($diff >= 0) {
+                    $results{'node'}->{$key} = $diff / $SAMPLETIME;
                 }
             }
         }
     }
-}
-
-if (-r "$IBLID") {
-    if (open($IB, "/usr/sbin/perfquery -r `cat $IBLID` 1 0xf000 |")) {
-        my $traffic_total = 0;
-
-        while ($ll = <$IB>) {
-            @ls = ( $ll =~ m/(.+:)\.+([0-9]*)/ );
-            # from the perfquery manpage:
-            # Note: In PortCounters, PortCountersExtended, PortXmitDataSL, and PortRcvDataSL, components that represent Data (e.g. PortXmitData
-            # and PortRcvData)  indicate octets divided by 4 rather than just octets.
-            if ( defined($ls[0]) && $ls[0] =~ m/PortRcvData:|RcvData:/) {
-                $results{'node'}->{traffic_read_ib} = $ls[1] * 4;
-                $traffic_total += $ls[1] * 4;
-            } elsif ( defined($ls[0]) && $ls[0] =~ m/PortXmitData:|XmtData:/) {
-                $results{'node'}->{traffic_write_ib} = $ls[1] * 4;
-                $traffic_total += $ls[1] * 4;
-            }
-        }
-
-        $results{'node'}->{traffic_total_ib} = $traffic_total ;
-        close($IB);
-    }
-}
-
-if ( -r $NETSTATFILE) {
-    if (open($NETST, '<'.$NETSTATFILE)) {
-        while ($ll = <$NETST>) {
-            @ls = split(' ', $ll);
-            if ($ls[0] =~ /(.*):/) {
-                $netstats{$1."_bytes_in"} = $ls[1];
-                $netstats{$1."_bytes_out"} = $ls[9];
-                $netstats{$1."_pkts_in"} = $ls[2];
-                $netstats{$1."_pkts_out"} = $ls[10];
-            }
-        }
-    }
-}
-
-if ( -r $MEMSTATFILE) {
-    if (open($MEMST, '<'.$MEMSTATFILE)) {
-        while ($ll = <$MEMST>) {
-            @ls = split(' ', $ll);
-            $ls[0] =~ s/://;
-            $memstats{$ls[0]} = $ls[1];
-        }
-    }
-}
-
-if ( -r $LOADSTATFILE) {
-    if (open($LOADST, '<'.$LOADSTATFILE)) {
-        $ll = <$LOADST>;
-        @ls = split(' ', $ll);
-        $loadstats{"load_one"} = $ls[0];
-        $loadstats{"load_five"} = $ls[1];
-        $loadstats{"load_fifteen"} = $ls[2];
-    }
-}
-
-if ( -r $CPUSTATFILE) {
-    if (open($CPUST, '<'.$CPUSTATFILE)) {
-        while ($ll = <$CPUST>) {
-            @ls = split(' ', $ll);
-            @keys = (
-                "user",
-                "nice",
-                "system",
-                "idle",
-                "iowait",
-                "irq",
-                "softirq",
-                "steal",
-                "guest",
-                "guest_nice");
-
-            if ($ll =~ /cpu(\d+)/) {
-                my $cpu = $1;
-                for ($j=0; $j<@keys; $j += 1) {
-                    $cpustats{"C".$cpu."_cpu_".$keys[$j]} = $ls[$j + 1];
-                }
-                next;
-            }
-            #if ($ls[0] eq "processes") {
-            #    $cpustats{"processes"} = $ls[1];
-            #}
-        }
-    }
+    printResults(\%results);
 }
 
 # print Dumper(\%results);
 printResults(\%results);
 
 ##### END MAIN ###################################
-
