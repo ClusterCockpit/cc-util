@@ -1,0 +1,5 @@
+#!/bin/bash
+
+echo "Start LDAP User Sync ..." >> /var/www/symfony/var/log/monitoring.log
+date >> /var/www/symfony/var/log/monitoring.log
+php /var/www/symfony/bin/console app:cron syncUsers >> /var/www/symfony/var/log/monitoring.log  2>&1

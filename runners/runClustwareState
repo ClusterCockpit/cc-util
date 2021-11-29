@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# Check for running process, only start if false: Keep-Alive after Reboots
+pid=$(pgrep perl -a | grep clustwareState)
+if [ -z "${pid}" ]; then
+    echo "Start CLUSTWARE Metric Sync ..." >> <PATH TO CC-DOCKER>/data/symfony/var/log/monitoring.log
+    date >> <PATH TO CC-DOCKER>/data/symfony/var/log/monitoring.log
+    perl <PATH TO CC-DOCKER>/data/monitor/clustwareState.pl >> /dev/null 2>&1
+fi

@@ -1,0 +1,8 @@
+INFLUX_token  => '<YOUR-INFLUX-TOKEN>',
+INFLUX_org    => 'ClusterCockpit',
+INFLUX_bucket => 'ClusterCockpit',
+USENATS       => 0,
+NATS_url      => '<YOUR-NATS>:4222',
+LOCALXML      => 0,
+VERBOSE       => 0,
+DEBUG         => 0,

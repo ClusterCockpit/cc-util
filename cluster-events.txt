@@ -1,0 +1,12 @@
+GMOND <HOSTNAME> <PORT>
+cpu_load:data:load_one
+mem_used:data:(mem_total - ( mem_shared + mem_free + mem_cached + mem_buffers )) * 0.000001
+mem_bw:data:likwid_mem_mbpers * 0.001
+flops_any:data:(likwid_spmflops + ( 2 * likwid_dpmflops )) * 0.001
+flops_dp:data:likwid_dpmflops * 0.001
+flops_sp:data:likwid_spmflops * 0.001
+cpi:data:likwid_avgcpi
+clock:data:likwid_avgcpuspeed
+rapl_power:data:likwid_totalpower
+traffic_read_eth:data:bytes_in
+traffic_write_eth:data:bytes_out

@@ -1,0 +1,8 @@
+#!/bin/bash
+
+proc=$(ps aux)
+pid=$(echo $proc | grep "perl /root/monitor/sinfo.pl")
+if [ -z "${pid}" ]; then
+    #echo "Start <HOST> SINFO Job Sync ..." >> /var/www/symfony/var/log/monitoring.log
+    perl /root/monitor/sinfo.pl >> /var/www/symfony/var/log/monitoring.log 2>&1 &
+fi

@@ -1,0 +1,8 @@
+DB_host       => 'db',
+DB_port       => '3306',
+DB_user       => 'symfony',
+DB_passwd     => 'symfony',
+DB_name       => 'ClusterCockpit',
+CC_token      => '<YOUR-CC-TOKEN>',
+VERBOSE       => 0,
+DEBUG         => 0,
