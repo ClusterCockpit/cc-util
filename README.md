@@ -9,7 +9,7 @@ Collector Scripts:
 * `collectors/qstat.pl` Parses QSTAT output and syncs *job metadata* into ClusterCockpit via REST API.
 * `collectors/sinfo.pl` Extracts job metadata for SLURM and syncs *job metadata* into ClusterCockpit via REST API.
 * `collectors/clustwareState.pl` Parses ClustWare metric stream and and inserts *metrics* defined inside into InfluxDBv2 via API.
-* `collectors/gmondparser.pl` Gets GANGLIA XML dump, parses it and inserts *metrics* defined in `cluster-events.txt` into InfluxDBv2 via API.
+* `collectors/gmondParser.pl` Gets GANGLIA XML dump, parses it and inserts *metrics* defined in `cluster-events.txt` into InfluxDBv2 via API.
 
 Runner Scripts:
 
@@ -23,11 +23,11 @@ Config Files:
 * `config/config_meta.pl` Config options for metadata scripts.
 * `config/config_metric.pl` Config options for metric scripts.
 * `config/log_meta.conf` Logger config for metadata scripts.
-* `config/log_metric.conf` Logger config for metric scritps.
+* `config/log_metric.conf` Logger config for metric scripts.
 
 Additional Files:
 
-* `cluster-events.txt` Template/Example Input-File for `gmondparser.pl`.
+* `cluster-events.txt` Template/Example Input-File for `gmondParser.pl`.
 * `setup_scripts.sh` Wrapper-Script for use in docker container startup.
 
 # Setup and Usage
@@ -103,8 +103,8 @@ cpanm --no-wget Log::Log4perl LWP::Simple DBI DBD::mysql JSON REST::Client Numbe
     * `INFLUX_token`: InfluxDBv2 REST authentication token.
     * `INFLUX_org`: InfluxDBv2 database organisation.
     * `INFLUX_bucket`: InfluxDBv2 database bucket.
-    * `USENATS` (Default: 0): Switch between metric data destination; `0` for REST/InfluxDBv2, `1` for NATS/cc-metric-store.
-    * `NATS_url`: NATS URL to use for connection and publishing on port 4222, when using NATS. 
+    * `USENATS` (Default: 0): Switch between metric data destination; '0' for REST/InfluxDBv2, '1' for NATS/cc-metric-store.
+    * `NATS_url`: NATS URL to use for connection and publishing on port 4222, when using NATS.
     * `LOCALXML` (Default: 0): `gmondParser.pl` only; Uses a local `out.xml` file as input instead of querying GANGLIA directly.
     * `VERBOSE` (Default 0): Add additional messages to configured log output (e.g. log each API operation instead of just summary).
     * `DEBUG` (Default: 0): Switches to DEBUG mode; Lookup data but do not persist. DEBUG messages are printed to STDOUT.
@@ -134,7 +134,10 @@ TARGETFIELD_3:TARGETMEASUREMENT_2:SOURCEFIELD1 + SOURCEFIELD2
 
 Given the following requirements:
 
+Cluster `elizabeth` with hostname `elly` on Port `8649` (Ganglia).
+
 Target InfluxDB measurement for fields `mem_used, mem_bw`: `data_mem`
+
 Target InfluxDB measurement for fields `flops_any, clock`: `data_cpu`
 
 - `mem_used`
@@ -157,15 +160,17 @@ Target InfluxDB measurement for fields `flops_any, clock`: `data_cpu`
     - Ganglia Source: MHz
     - Metric Target: MHz
 
-The respective `cluster-events.txt` would be:
+The respective `elizabeth-events.txt` would be:
 
 ```
-GMOND <HOSTNAME> <PORT>
+GMOND elly 8649
 mem_used:data_mem:(mem_total - ( mem_shared + mem_free + mem_cached + mem_buffers )) * 0.000001
 mem_bw:data_mem:likwid_mem_mbpers * 0.001
 flops_any:data_cpu:(likwid_spmflops + ( 2 * likwid_dpmflops )) * 0.001
 clock:data_cpu:likwid_avgcpuspeed
 ```
+
+The script would be called as `$> gmondParser.pl elizabeth &`
 
 # Example setup with CC-Docker
 
