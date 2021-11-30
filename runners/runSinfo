@@ -1,7 +1,7 @@
 #!/bin/bash
 
 proc=$(ps aux)
-pid=$(echo $proc | grep "perl /root/monitor/sinfo.pl")
+pid=$(echo $proc | grep "perl /root/monitor/collectors/sinfo.pl")
 if [ -z "${pid}" ]; then
     #echo "Start <CLUSTER> SINFO Job Sync ..." >> /var/www/symfony/var/log/monitoring.log
     perl /root/monitor/collectors/sinfo.pl >> /var/www/symfony/var/log/monitoring.log 2>&1 &
