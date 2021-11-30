@@ -84,7 +84,7 @@ cpanm --no-wget Log::Log4perl LWP::Simple DBI DBD::mysql JSON REST::Client Numbe
     * Configured via `config_meta.pl`.
         * ClusterCockpit REST Authentication-Token: `CC_token`.
         * MySQL Connection Parameters: `DB_*`.
-    * Metadata scripts are intended to be used inside a docker container and use preconfigured `$cwd` and log path (see (docker example)[#example-setup-with-cc-docker] below).
+    * Metadata scripts are intended to be used inside a docker container and use preconfigured `$cwd` and log path (see [docker example](#example-setup-with-cc-docker) below).
     * Line 44-47: Adapt `<CLUSTER> to <HOSTNAME>` mapping.
     * Line 95: Adapt PBS Record URL.
 
@@ -92,7 +92,7 @@ cpanm --no-wget Log::Log4perl LWP::Simple DBI DBD::mysql JSON REST::Client Numbe
     * Configured via `config_meta.pl`.
         * ClusterCockpit REST Authentication-Token: `CC_token`.
         * MySQL Connection Parameters: `DB_*`.
-    * Metadata scripts are intended to be used inside a docker container and use preconfigured `$cwd` and log path (see (docker example)[#example-setup-with-cc-docker] below).
+    * Metadata scripts are intended to be used inside a docker container and use preconfigured `$cwd` and log path (see [docker example](#example-setup-with-cc-docker) below).
     * Line 43-44: Adapt SLURM connection parameters.
     * Line 67: Adapt SLURM Queue URL.
     * Line 88/90: Adapt node regex expressions.
@@ -103,7 +103,7 @@ cpanm --no-wget Log::Log4perl LWP::Simple DBI DBD::mysql JSON REST::Client Numbe
     * `INFLUX_token`: InfluxDBv2 REST authentication token.
     * `INFLUX_org`: InfluxDBv2 database organisation.
     * `INFLUX_bucket`: InfluxDBv2 database bucket.
-    * `USENATS` (Default: 0): Switch between metric data destination; '0' for REST/InfluxDBv2, '1' for NATS/(cc-metric-store)[https://github.com/ClusterCockpit/cc-metric-store].
+    * `USENATS` (Default: 0): Switch between metric data destination; '0' for REST/InfluxDBv2, '1' for NATS/[cc-metric-store](https://github.com/ClusterCockpit/cc-metric-store).
     * `NATS_url`: NATS URL to use for connection and publishing on port 4222, when using NATS (e.g. `nats://nats.server:4222`).
     * `LOCALXML` (Default: 0): `gmondParser.pl` only; Uses a local `out.xml` file as input instead of querying GANGLIA directly (for debug purposes).
     * `VERBOSE` (Default 0): Add additional messages to configured log output (e.g. log each API operation instead of just summary).
@@ -115,7 +115,7 @@ cpanm --no-wget Log::Log4perl LWP::Simple DBI DBD::mysql JSON REST::Client Numbe
     * `DB_user`: MySQL database user.
     * `DB_passwd`: MySQL database user password.
     * `DB_name`: MySQL database name.
-    * `CC_TOKEN`: Token for (ClusterCockpit API-User)[https://github.com/ClusterCockpit/ClusterCockpit/wiki/Create-API-token] to authenticate with REST-API.
+    * `CC_TOKEN`: Token for [ClusterCockpit API-User](https://github.com/ClusterCockpit/ClusterCockpit/wiki/Create-API-token) to authenticate with REST-API.
     * `VERBOSE` (Default 0): Add additional messages to configured log output (e.g. log each API operation instead of just summary).
     * `DEBUG` (Default: 0): Switches to DEBUG mode; Lookup data but do not persist. DEBUG messages are printed to STDOUT.
 
@@ -174,7 +174,7 @@ The script would be called as `$> gmondParser.pl elizabeth &`
 
 Clone this repository to `<PATH TO CC-DOCKER>/data/monitor`.
 
-Then mount the folder as `/root/monitor` into the `php-fpm` container via `docker-compose.yml` and the respective `Dockerfile` (For (details)[https://github.com/ClusterCockpit/cc-docker], see `cc-docker` repository):
+Then mount the folder as `/root/monitor` into the `php-fpm` container via `docker-compose.yml` and the respective `Dockerfile` (For details, see [cc-docker repository](https://github.com/ClusterCockpit/cc-docker)):
 
 ```
 [docker-compose.yml ...]
@@ -209,7 +209,7 @@ Then add `setup_scripts.sh` to the containers' `entrypoint.sh`.
 
 In this example setup, Metric-Scripts are intended to be run *directly on host*.
 
-You may have to locally install dependencies and perl modules for the metric scripts to work as intended (see (above)[#dependencies] or `setup_scripts.sh`).
+You may have to locally install dependencies and perl modules for the metric scripts to work as intended (see [above](#dependencies) or `setup_scripts.sh`).
 
 Add the following lines directly to your hosts `crontab` to run metric collection each minute:
 
@@ -235,6 +235,6 @@ On container startup, `entrypoint.sh` calls the script `setup_scripts.sh`, which
 
 **Please note: As required PERL-Modules are installed on container startup, this will extend the containers' startup time, and no new docker image will be created.**
 
-The container `cron`-daemon uses `run-parts` ((Info)[https://manpages.ubuntu.com/manpages/bionic/en/man8/run-parts.8.html]) to execute all scripts inside `/etc/periodic/*` directories subsequentially.
+The container `cron`-daemon uses `run-parts` ([Info](https://manpages.ubuntu.com/manpages/bionic/en/man8/run-parts.8.html)) to execute all scripts inside `/etc/periodic/*` directories subsequentially.
 
 Default logging destination for metric scripts (inside container) is `/var/www/symfony/var/log/monitoring[-error].log`.
