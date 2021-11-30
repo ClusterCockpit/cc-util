@@ -101,7 +101,7 @@ cpanm --no-wget Log::Log4perl LWP::Simple DBI DBD::mysql JSON REST::Client Numbe
     * Line 6-8: Adapt `<PATH TO CC-DOCKER>`.
 
 * `runQstat`
-    * Line 7: Adapt `<HOST>` argument.
+    * Line 4/7: Adapt `<CLUSTER>` argument.
 
 ## Config Options
 
