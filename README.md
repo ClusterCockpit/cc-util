@@ -34,14 +34,18 @@ Additional Files:
 
 ## Dependencies
 
-The following local packages and Perl modules need to be installed (Here: Using `cpanm` on an `alpine` distribution):
+The following local packages and Perl modules need to be installed (Here: Using `cpanm`):
 
 ```
-#PACKAGES
+#PACKAGES (ALPINE)
 apk add perl-dev perl-utils perl-app-cpanminus musl-dev zlib-dev mysql-dev
 
+#PACKAGES (DEBIAN)
+apt-get update
+apt-get install -y libperl-dev cpanminus musl-dev libzlcore-dev default-libmysqlclient-dev default-libmysqld-dev
+
 #PERL MODULES
-cpanm --no-wget Log::Log4perl LWP::Simple DBI DBD::mysql JSON REST::Client Number::Range Net::NATS::Client
+cpanm --no-wget Log::Log4perl Math::Expression LWP::Simple DBI DBD::mysql JSON REST::Client Number::Range Net::NATS::Client
 ```
 
 ## Script Usage
