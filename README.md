@@ -97,6 +97,12 @@ cpanm --no-wget Log::Log4perl LWP::Simple DBI DBD::mysql JSON REST::Client Numbe
     * Line 67: Adapt SLURM Queue URL.
     * Line 88/90: Adapt node regex expressions.
 
+* `runClustwareState`
+    * Line 6-8: Adapt `<PATH TO CC-DOCKER>`.
+
+* `runQstat`
+    * Line 7: Adapt `<HOST>` argument.
+
 ## Config Options
 
 * `config_metric.pl`

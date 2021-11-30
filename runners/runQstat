@@ -4,5 +4,5 @@ proc=$(ps aux)
 pid=$(echo $proc | grep "/root/monitor/qstat.pl <HOST>")
 if [ -z "${pid}" ]; then
     #echo "Start <HOST> QSTAT Job Sync ..." >> /var/www/symfony/var/log/monitoring.log
-    perl /root/monitor/qstat.pl <HOST> >> /var/www/symfony/var/log/monitoring.log 2>&1 &
+    perl /root/monitor/collectors/qstat.pl <HOST> >> /var/www/symfony/var/log/monitoring.log 2>&1 &
 fi
