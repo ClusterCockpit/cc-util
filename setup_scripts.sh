@@ -2,7 +2,7 @@
 
 # install perl modules and dependencies
 apk add perl-dev perl-utils perl-app-cpanminus musl-dev zlib-dev mysql-dev
-cpanm --no-wget Log::Log4perl LWP::Simple DBI DBD::mysql JSON REST::Client Number::Range Net::NATS::Client
+cpanm --no-wget Log::Log4perl Math::Expression LWP::Simple DBI DBD::mysql JSON REST::Client Number::Range Net::NATS::Client
 
 # create periodic folder for 1min
 mkdir /etc/periodic/1min
