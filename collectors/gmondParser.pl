@@ -281,7 +281,7 @@ sub hostHandlerNats
         ## PERSIST: NATS for cc-metric-store
         foreach my $event ( @events ) {
             my $result      = $ArithEnv->EvalToScalar($event->{metric});
-            my $measurement = $event->{name}.",hostname=$name,type=\"node\",type-id=0 value=$result $time";
+            my $measurement = $event->{name}.",cluster=$cluster,hostname=$name,type=\"node\",type-id=0 value=$result $time";
 
             if ( $config{DEBUG} ) {
                 print "USE 'updates' on ".$config{NATS_url}." WITH ".$measurement."\n";

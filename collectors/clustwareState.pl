@@ -183,7 +183,7 @@ $SIG{ALRM} = sub {
                 next if  $metric =~ /report_time/; # skip time for line protocol data build
                 next if  $metric =~ /mem_total/; # skip constant mem_total for line protocol data build
 
-                my $measurement = "$metric,hostname=$node,type=\"node\",type-id=0 value=".$ClusterState{$node}->{$metric}." $ClusterState{$node}{report_time}";
+                my $measurement = "$metric,cluster=$cluster,hostname=$node,type=\"node\",type-id=0 value=".$ClusterState{$node}->{$metric}." $ClusterState{$node}{report_time}";
                 push(@natsMeasurements, $measurement);
             }
 
