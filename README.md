@@ -81,6 +81,7 @@ cpanm --no-wget Log::Log4perl Math::Expression LWP::Simple DBI DBD::mysql JSON R
     * Line 23: Adapt primary path `$cwd`.
     * Line 25: Adapt path to log files `log4perl.appender.AppError.filename` in `config/log_metric.conf`.
     * Line 50-54: Adapt ClustWare connection parameters.
+    * Line 259-404: Adapt node regex expressions (7 comparisons in total).
     * Line 135-173, Optional: Adapt metric scaling.
     * Line 242-411, Optional: Adapt collected metrics.
 

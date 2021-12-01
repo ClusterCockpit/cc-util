@@ -256,7 +256,7 @@ while ( 1 ) {
             my $value = $fields[1];
             next if not defined $value;
 
-            if ( $host =~ /m[0-9]+/ ) {
+            if ( $host =~ /m[0-9]+/ ) { # USE YOUR NODE-NAME REGEX HERE
                 if ($label eq 'localtime') {
                     $ClusterState{$host}{'report_time'} = $value;
                 }
@@ -275,7 +275,7 @@ while ( 1 ) {
             my $value = $fields[1];
             next if not defined $value;
 
-            if ( $host =~ /m[0-9]+/ ) {
+            if ( $host =~ /m[0-9]+/ ) { # USE YOUR NODE-NAME REGEX HERE
                 if ($label eq 'sum_membw') {
                     $ClusterState{$host}{'mem_bw'} = $value;
                 }
@@ -311,7 +311,7 @@ while ( 1 ) {
             my $value = $fields[1];
             next if not defined $value;
 
-            if ( $host =~ /m[0-9]+/ ) {
+            if ( $host =~ /m[0-9]+/ ) { # USE YOUR NODE-NAME REGEX HERE
                 if ($label eq 'total') {
                     $ClusterState{$host}{'mem_total'} = $value;
                 }
@@ -341,7 +341,7 @@ while ( 1 ) {
             my $value = $fields[1];
             next if not defined $value;
 
-            if ( $host =~ /m[0-9]+/ ) {
+            if ( $host =~ /m[0-9]+/ ) { # USE YOUR NODE-NAME REGEX HERE
                 if ($label eq 'bytes') {
                     if ($direction eq 'receive') {
                         $ClusterState{$host}{'traffic_read_eth'} = sprintf "%.2f", $value;
@@ -365,7 +365,7 @@ while ( 1 ) {
             my $value = $fields[1];
             next if not defined $value;
 
-            if ( $host =~ /m[0-9]+/ ) {
+            if ( $host =~ /m[0-9]+/ ) { # USE YOUR NODE-NAME REGEX HERE
                 if ($label eq '1') {
                     $ClusterState{$host}{'cpu_load'} = $value;
                 }
@@ -383,7 +383,7 @@ while ( 1 ) {
             my $value = $fields[1];
             next if not defined $value;
 
-            if ( $host =~ /m[0-9]+/ ) {
+            if ( $host =~ /m[0-9]+/ ) { # USE YOUR NODE-NAME REGEX HERE
                 if ($label eq 'ibPort_rcv_data') {
                     $ClusterState{$host}{'pkg_rate_read_ib'} = $value;
                 }
@@ -401,7 +401,7 @@ while ( 1 ) {
             my $value = $fields[1];
             next if not defined $value;
 
-            if ( $host =~ /m[0-9]+/ ) {
+            if ( $host =~ /m[0-9]+/ ) { # USE YOUR NODE-NAME REGEX HERE
                 if ($label eq 'ibPort_xmit_packets') {
                     $ClusterState{$host}{'pkg_rate_write_ib'} = $value;
                 };
