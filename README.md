@@ -107,7 +107,7 @@ cpanm --no-wget Log::Log4perl Math::Expression LWP::Simple DBI DBD::mysql JSON R
 
 * `runQstat`
     * Line 4/7: Adapt `<CLUSTER>` argument.
-    * For multiple <CLUSTER>s, either multiply command line inside runner for each argument, or use one runner script for each <CLUSTER>, e.g. `runQstatClustone` and `runQstatClusttwo` etc. 
+    * For multiple CLUSTERs, either multiply command line inside runner for each argument, or use one runner script for each <CLUSTER>, e.g. `runQstatClustone` and `runQstatClusttwo` etc. 
 
 ## Config Options
 
