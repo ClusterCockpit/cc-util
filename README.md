@@ -14,7 +14,7 @@ Collector Scripts:
 Runner Scripts:
 
 * `runners/runClustwareState` Script for use with `cron` *on host*; Starts `clustwareState.pl` only if not yet running.
-* `runners/runLdapSync` Script for use with `cron` *in container*; Runs `app:cron syncUsers` for synching LDAP with ClusterCockpit userbase.
+* `runners/runLdapSync` Script for use with `cron` *in container*; Runs `app:cron syncUsers` for synching LDAP with ClusterCockpit userbase (See [CC Wiki](https://github.com/ClusterCockpit/ClusterCockpit/wiki/Datasource-user#import-users-from-ldap)).
 * `runners/runQstat` Script for use with `cron` *in container*; Runs `perl /root/monitor/qstat.pl <CLUSTER>` only if not yet running.
 * `runners/runSinfo` Script for use with `cron` *in container*; Runs `perl /root/monitor/sinfo.pl` only if not yet running.
 
