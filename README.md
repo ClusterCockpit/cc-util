@@ -107,6 +107,7 @@ cpanm --no-wget Log::Log4perl Math::Expression LWP::Simple DBI DBD::mysql JSON R
 
 * `runQstat`
     * Line 4/7: Adapt `<CLUSTER>` argument.
+    * For multiple <CLUSTER>s, either multiply command line inside runner for each argument, or use one runner script for each <CLUSTER>, e.g. `runQstatClustone` and `runQstatClusttwo` etc. 
 
 ## Config Options
 
@@ -248,4 +249,4 @@ On container startup, `entrypoint.sh` calls the script `setup_scripts.sh`, which
 
 The container `cron`-daemon uses `run-parts` ([Info](https://manpages.ubuntu.com/manpages/bionic/en/man8/run-parts.8.html)) to execute all scripts inside `/etc/periodic/*` directories subsequentially.
 
-Default logging destination for metric scripts (inside container) is `/var/www/symfony/var/log/monitoring[-error].log`.
+Default logging destination for metadata scripts (inside container) is `/var/www/symfony/var/log/monitoring[-error].log`.
