@@ -66,7 +66,7 @@ $dbh->disconnect;
 # get running jobs from Slurm
 my $url = "http://<CLUSTER>.<DOMAIN>/<PATH>/squeue-l.txt";
 my $raw_data = get($url);
-die "Can't GET $url" if (! defined $raw_data);
+die $log->error("SINFO \@$cluster_id: Can't GET $url") if (! defined $raw_data);
 
 my @records = split(/\n/, $raw_data);
 foreach my $line ( @records ) {
