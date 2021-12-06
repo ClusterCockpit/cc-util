@@ -13,7 +13,7 @@ use File::Slurp;
 use JSON;
 use Math::Expression;
 use REST::Client;
-use Net::NATS::Client
+use Net::NATS::Client;
 
 ###############################################################################
 #  Initialization
@@ -24,6 +24,9 @@ my $cwd = '<PATH TO CC-DOCKER>/data/monitor';
 my $time = localtime();
 my %config = do "$cwd/config/config_metric.pl";
 
+Log::Log4perl->init("$cwd/config/log_metric.conf");
+my $log = Log::Log4perl->get_logger("clustwareParser");
+
 my $natsClient;
 my $restClient;
 
@@ -32,7 +35,7 @@ if ( $config{USENATS} ) {
     $natsClient->connect() or die $log->error("Couldn't connect to $config{NATS_url}: $@");
 
 } else {
-    $restclient = REST::Client->new();
+    $restClient = REST::Client->new();
     $restClient->setHost('https://localhost:8086'); #API URL when script runs on same host as InfluxDBv2
     $restClient->addHeader('Authorization', "Token $config{INFLUX_token}");
     $restClient->addHeader('Content-Type', 'text/plain; charset=utf-8');
@@ -41,9 +44,6 @@ if ( $config{USENATS} ) {
     $restClient->getUseragent()->ssl_opts(SSL_verify_mode => 0);
     $restClient->getUseragent()->ssl_opts(verify_hostname => 0);
 }
-
-Log::Log4perl->init("$cwd/config/log_metric.conf");
-my $log = Log::Log4perl->get_logger("clustwareParser");
 
 my $json = JSON->new->allow_nonref;
 
