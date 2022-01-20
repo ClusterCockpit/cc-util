@@ -8,8 +8,8 @@ Collector Scripts:
 
 * `collectors/qstat.pl` Parses QSTAT output and syncs *job metadata* into ClusterCockpit via REST API.
 * `collectors/sinfo.pl` Extracts job metadata for SLURM and syncs *job metadata* into ClusterCockpit via REST API.
-* `collectors/clustwareState.pl` Parses ClustWare metric stream and and inserts *metrics* defined inside into InfluxDBv2 via API.
-* `collectors/gmondParser.pl` Gets GANGLIA XML dump, parses it and inserts *metrics* defined in `cluster-events.txt` into InfluxDBv2 via API.
+* `collectors/clustwareState.pl` Parses ClustWare metric stream and and inserts *metrics* defined inside into InfluxDBv2 via API and/or cc-metric-store via NATS.
+* `collectors/gmondParser.pl` Gets GANGLIA XML dump, parses it and inserts *metrics* defined in `cluster-events.txt` into InfluxDBv2 via API and/or cc-metric-store via NATS.
 
 Runner Scripts:
 
@@ -29,6 +29,7 @@ Additional Files:
 
 * `cluster-events.txt` Template/Example Input-File for `gmondParser.pl`.
 * `setup_scripts.sh` Wrapper-Script for use in docker container startup.
+* `legacy-specs/**` Collector-Scripts and config files using now outdated SQL data scheme used in ClusterCockpit up to v1.1, and cc-docker v1.0 .
 
 # Setup and Usage
 
@@ -71,8 +72,8 @@ cpanm --no-wget Log::Log4perl Math::Expression LWP::Simple DBI DBD::mysql JSON R
         * InfluxDB API Parameters: `INFLUX_org` and `INFLUX_bucket`.
     * Line 23: Adapt primary path `$cwd`.
     * Line 27: Adapt path to log files `log4perl.appender.AppError.filename` in `config/log_metric.conf`.
-    * Line 188/190: Adapt node regex expressions.
-    * Line 260/262: Adapt node regex expressions.
+    * Line 195/197: Adapt node regex expressions.
+    * Line 267/269: Adapt node regex expressions.
 
 * `clustwareState.pl`
     * Configured via `config_metric.pl`.
@@ -80,10 +81,10 @@ cpanm --no-wget Log::Log4perl Math::Expression LWP::Simple DBI DBD::mysql JSON R
         * InfluxDB API Parameters: `INFLUX_org` and `INFLUX_bucket`.
     * Line 23: Adapt primary path `$cwd`.
     * Line 25: Adapt path to log files `log4perl.appender.AppError.filename` in `config/log_metric.conf`.
-    * Line 50-54: Adapt ClustWare connection parameters.
-    * Line 259-404: Adapt node regex expressions (7 comparisons in total).
-    * Line 135-173, Optional: Adapt metric scaling.
-    * Line 242-411, Optional: Adapt collected metrics.
+    * Line 52-54: Adapt ClustWare connection parameters.
+    * Line 264-409: Adapt node regex expressions (7 comparisons in total).
+    * Line 137-174, Optional: Adapt metric scaling.
+    * Line 247-416, Optional: Adapt collected metrics.
 
 * `qstat.pl`
     * Configured via `config_meta.pl`.
@@ -91,7 +92,7 @@ cpanm --no-wget Log::Log4perl Math::Expression LWP::Simple DBI DBD::mysql JSON R
         * MySQL Connection Parameters: `DB_*`.
     * Metadata scripts are intended to be used inside a docker container and use preconfigured `$cwd` and log path (see [docker example](#example-setup-with-cc-docker) below).
     * Line 44-47: Adapt `<CLUSTER> to <HOSTNAME>` mapping.
-    * Line 95: Adapt PBS Record URL.
+    * Line 84: Adapt PBS Record URL.
 
 * `sinfo.pl`
     * Configured via `config_meta.pl`.
@@ -99,23 +100,24 @@ cpanm --no-wget Log::Log4perl Math::Expression LWP::Simple DBI DBD::mysql JSON R
         * MySQL Connection Parameters: `DB_*`.
     * Metadata scripts are intended to be used inside a docker container and use preconfigured `$cwd` and log path (see [docker example](#example-setup-with-cc-docker) below).
     * Line 43-44: Adapt SLURM connection parameters.
-    * Line 67: Adapt SLURM Queue URL.
-    * Line 88/90: Adapt node regex expressions.
+    * Line 81: Adapt SLURM Queue URL.
+    * Line 97/103/107: Adapt node regex/format expressions.
 
 * `runClustwareState`
     * Line 6-8: Adapt `<PATH TO CC-DOCKER>`.
 
 * `runQstat`
     * Line 4/7: Adapt `<CLUSTER>` argument.
-    * For multiple CLUSTERs, either multiply command line inside runner for each argument, or use one runner script for each <CLUSTER>, e.g. `runQstatClustone` and `runQstatClusttwo` etc. 
+    * For multiple CLUSTERs, either multiply command line inside runner for each argument, or use one runner script for each <CLUSTER>, e.g. `runQstatClustone` and `runQstatClusttwo` etc.
 
 ## Config Options
 
 * `config_metric.pl`
+    * `SENDTO_influx` (Default: 1): Send metric data to InfluxDB v2 via Influx REST API.
+    * `SENDTO_nats` (Default: 0): Send metric data to [cc-metric-store](https://github.com/ClusterCockpit/cc-metric-store) via publishing to NATS 'updates' sink.
     * `INFLUX_token`: InfluxDBv2 REST authentication token.
     * `INFLUX_org`: InfluxDBv2 database organisation.
     * `INFLUX_bucket`: InfluxDBv2 database bucket.
-    * `USENATS` (Default: 0): Switch between metric data destination; '0' for REST/InfluxDBv2, '1' for NATS/[cc-metric-store](https://github.com/ClusterCockpit/cc-metric-store).
     * `NATS_url`: NATS URL to use for connection and publishing on port 4222, when using NATS (e.g. `nats://nats.server:4222`).
     * `LOCALXML` (Default: 0): `gmondParser.pl` only; Uses a local `out.xml` file as input instead of querying GANGLIA directly (for debug purposes).
     * `VERBOSE` (Default 0): Add additional messages to configured log output (e.g. log each API operation instead of just summary).

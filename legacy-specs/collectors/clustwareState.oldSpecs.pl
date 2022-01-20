@@ -30,12 +30,11 @@ my $log = Log::Log4perl->get_logger("clustwareParser");
 my $natsClient;
 my $restClient;
 
-if ( $config{SENDTO_nats} ) {
+if ( $config{USENATS} ) {
     $natsClient = Net::NATS::Client->new(uri => $config{NATS_url});
     $natsClient->connect() or die $log->error("Couldn't connect to $config{NATS_url}: $@");
-}
 
-if ( $config{SENDTO_influx} ) {
+} else {
     $restClient = REST::Client->new();
     $restClient->setHost('https://localhost:8086'); #API URL when script runs on same host as InfluxDBv2
     $restClient->addHeader('Authorization', "Token $config{INFLUX_token}");
@@ -133,7 +132,7 @@ $SIG{ALRM} = sub {
     ### Use parsed cluster-events.txt and write to influx
         ##> TODO
 
-    ### Use local Calculations and ClusterState and write to Influx and/or cc-metric-store
+    ### Use local Calculations and ClusterState and write to Influx or cc-metric-store
     foreach my $node ( keys %ClusterState ){
         ## DEFAULTS
         $ClusterState{$node}{'flops_any'} = 0;
@@ -172,7 +171,6 @@ $SIG{ALRM} = sub {
             $ClusterState{$node}{pkg_rate_read_ib}  = sprintf "%.2f", ($ClusterState{$node}{pkg_rate_read_ib} ); # * 0.000001 - use raw for now
             $ClusterState{$node}{pkg_rate_write_ib} = sprintf "%.2f", ($ClusterState{$node}{pkg_rate_write_ib}); # * 0.000001 - use raw for now
         }
-
         ## PREPARE
         # host = node
         # time = CusterState{node}{report_time}
@@ -180,7 +178,7 @@ $SIG{ALRM} = sub {
         my $restMeasurement    = '';
         my @natsMeasurements   = ();
 
-        if ( $config{SENDTO_nats} ) {
+        if ( $config{USENATS} ) {
             foreach my $metric ( keys %{$ClusterState{$node}} ){
                 next if  $metric =~ /report_time/; # skip time for line protocol data build
                 next if  $metric =~ /mem_total/; # skip constant mem_total for line protocol data build
@@ -188,9 +186,8 @@ $SIG{ALRM} = sub {
                 my $measurement = "$metric,cluster=$cluster,hostname=$node,type=\"node\",type-id=0 value=".$ClusterState{$node}->{$metric}." $ClusterState{$node}{report_time}";
                 push(@natsMeasurements, $measurement);
             }
-        }
 
-        if ( $config{SENDTO_influx} ) {
+        } else {
             my $dataString      = '';
 
             foreach my $metric ( keys %{$ClusterState{$node}} ){
@@ -204,21 +201,19 @@ $SIG{ALRM} = sub {
         }
 
         ## PERSIST: NATS for cc-metric-store or REST for influxv2-api
-        if ( $config{SENDTO_nats} ) {
+        if ( $config{USENATS} ) {
             foreach my $measurement ( @natsMeasurements ) {
                 if ( $config{DEBUG} ) {
-                    print "USE 'updates' on $config{NATS_url} WITH $measurement\n";
+                    print "USE 'updates' on $config{NATS_url} WITH ".$measurement."\n";
                 } else {
                     # Simple Publisher without Response-Check (TODO)
                     $natsClient->publish('updates', $measurement);
-                    $log->info("MEGWARE NATS PUBLISH: For 'updates' on $config{NATS_url} WITH $measurement");
                 }
             }
-        }
 
-        if ( $config{SENDTO_influx} ) {
+        } else {
             if ( $config{DEBUG} ) {
-                print "USE /api/v2/write?org=$config{INFLUX_org}&bucket=$config{INFLUX_bucket}&precision=s WITH $restMeasurement\n";
+                print "USE /api/v2/write?org=$config{INFLUX_org}&bucket=$config{INFLUX_bucket}&precision=s WITH ".$restMeasurement."\n";
 
             } else {
                 $restClient->POST("/api/v2/write?org=$config{INFLUX_org}&bucket=$config{INFLUX_bucket}&precision=s", "$restMeasurement");
@@ -226,11 +221,11 @@ $SIG{ALRM} = sub {
 
                 if ( $responseCode eq '204') {
                     if ( $config{VERBOSE}) {
-                        $log->info("MEGWARE INFLUX API WRITE: CLUSTER $cluster MEASUREMENT $restMeasurement");
+                        $log->info("MEGWARE API WRITE: CLUSTER $cluster MEASUREMENT $restMeasurement");
                     }
                 } else {
                     my $response = $restClient->responseContent();
-                    $log->error("MEGWARE INFLUX API WRITE ERROR CODE $responseCode: $response");
+                    $log->error("MEGWARE API WRITE ERROR CODE ".$responseCode.": ".$response);
                 };
             };
         };
@@ -419,7 +414,7 @@ $t1 = [gettimeofday];
 sleep(1);
 $socket->close();
 
-if ( $config{SENDTO_nats} ) {
+if ( $config{USENATS} ) {
     $natsClient->close();
 }
 

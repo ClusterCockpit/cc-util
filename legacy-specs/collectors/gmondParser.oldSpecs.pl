@@ -38,12 +38,11 @@ if (not defined $cluster) {
 my $restClient;
 my $natsClient;
 
-if ( $config{SENDTO_nats} ) {
+if ( $config{USENATS} ) {
     $natsClient = Net::NATS::Client->new(uri => $config{NATS_url});
     $natsClient->connect() or die $log->error("Couldn't connect to $config{NATS_url}: $@");
-}
 
-if ( $config{SENDTO_influx} ) {
+ } else {
     $restClient = REST::Client->new();
     $restClient->setHost('https://localhost:8086'); #API URL when script runs on same host as InfluxDBv2
     $restClient->addHeader('Authorization', "Token $config{INFLUX_token}");
@@ -145,32 +144,26 @@ my $socket = IO::Socket::INET->new(
 ###############################################################################
 #  Parse XML and input extracted metrics in database
 ###############################################################################
-my $twigNats;
-my $twigRest;
+my $twig;
 my $timestamp;
 
-$t0 = [gettimeofday];
-
-if ( $config{SENDTO_nats} ) {
-    $twigNats = new XML::Twig(
+if ( $config{USENATS} ) {
+    $twig = new XML::Twig(
         twig_handlers => {
             HOST    => \&hostHandlerNats,
             CLUSTER => \&setTimestamp }
     );
 
-    $twigNats->parse( $data ) or die "Parse error for Nats";
-}
-
-if ( $config{SENDTO_influx} ) {
-    $twigRest = new XML::Twig(
+} else {
+    $twig = new XML::Twig(
         twig_handlers => {
             HOST    => \&hostHandlerRest,
             CLUSTER => \&setTimestamp }
     );
-
-    $twigRest->parse( $data ) or die "Parse error for Rest";
 }
 
+$t0 = [gettimeofday];
+$twig->parse( $data ) or die "Parse error";
 $t1 = [gettimeofday];
 
 if ($config{VERBOSE}) {
@@ -237,7 +230,7 @@ sub hostHandlerRest
             my $measurement = "$meas,host=$name $fields $time";
 
             if ( $config{DEBUG} ) {
-                print "USE /api/v2/write?org=$config{INFLUX_org}&bucket=$config{INFLUX_bucket}&precision=s WITH $measurement\n";
+                print "USE /api/v2/write?org=$config{INFLUX_org}&bucket=$config{INFLUX_bucket}&precision=s WITH ".$measurement."\n";
 
             } else {
                 # Use v2 API for Influx2
@@ -246,12 +239,12 @@ sub hostHandlerRest
 
                 if ( $responseCode eq '204') {
                     if ( $config{VERBOSE}) {
-                        $log->info("GMOND INFLUX API WRITE: CLUSTER $cluster MEASUREMENT $measurement");
+                        $log->info("GMOND API WRITE: CLUSTER $cluster MEASUREMENT $measurement");
                     }
                 } else {
                     if ( $responseCode ne '422' ) { # Exclude High Frequency Error 422 - Temporary!
                         my $response = $restClient->responseContent();
-                        $log->error("GMOND INFLUX API WRITE ERROR CODE $responseCode : $response");
+                        $log->error("GMOND API WRITE ERROR CODE ".$responseCode.": ".$response);
                     };
                 };
             };
@@ -291,11 +284,10 @@ sub hostHandlerNats
             my $measurement = $event->{name}.",cluster=$cluster,hostname=$name,type=\"node\",type-id=0 value=$result $time";
 
             if ( $config{DEBUG} ) {
-                print "USE 'updates' on $config{NATS_url} WITH $measurement\n";
+                print "USE 'updates' on ".$config{NATS_url}." WITH ".$measurement."\n";
             } else {
                 # Simple Publisher without Response-Check (TODO)
                 $natsClient->publish('updates', $measurement);
-                $log->info("GMOND NATS PUBLISH:  For 'updates' on $config{NATS_url} WITH $measurement");
             };
         };
     };
@@ -303,7 +295,7 @@ sub hostHandlerNats
 
 #------------------------------------#
 
-if ( $config{SENDTO_nats} ) {
+if ( $config{USENATS} ) {
     $natsClient->close();
 }
 
