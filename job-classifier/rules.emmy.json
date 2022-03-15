@@ -1,0 +1,21 @@
+{
+    "cluster": "emmy",
+    "rules": [
+        {
+            "conditions": [
+                {
+                    "metric": "cpu_load",
+                    "stat": "avg",
+                    "cond": "<",
+                    "value": 1.0
+                }
+            ],
+            "actions": [
+                {
+                    "type": "add-tag",
+                    "value": { "type": "classification", "name": "low-load" }
+                }
+            ]
+        }
+    ]
+}
